@@ -52,6 +52,12 @@ function check_remote_exists() {
   fi
 }
 
+# Creating hsi out directory for temp output files
+# this should already be inlcuded in the .gitgnore file.
+# sensitive strings will be written, never checkin the files from this folder
+# to your version control.
+mkdir -p hsi.out
+
 # create the codecommit repository after checking for its existence
 echo "Going to check if $repositoryName exists"
 repoexists=$(check_repo_exists $repositoryName)
