@@ -1,0 +1,29 @@
+*.js
+!jest.config.js
+*.d.ts
+node_modules
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+dist
+
+
+# CDK Context
+cdk.context.json
+
+# HSI
+outputs.json
+response.json
+hsi.out
+
+# Parcel default cache directory
+.parcel-cache
+
+
+# npm temps
+.config
+.npm
+
+#eslint
+!.eslintrc.js
