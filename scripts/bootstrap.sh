@@ -86,7 +86,7 @@ fi
 
 
 # pushing the current code to codecommit repository
-git push --set-upstream cc master
+git push --set-upstream cc main
 
 # set post install script to execute
 # this is used by npm to run install for all child folders under resources
