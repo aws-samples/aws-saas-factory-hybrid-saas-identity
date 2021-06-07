@@ -180,7 +180,7 @@ Here is a quick glance of the steps involved in provisioning, refer to [this](./
 <img src="./resources/images/tenant_onboarding_example.png" alt="drawing" width="400"/>
 
 #### Monitor tenant provisioning
-To monitor the setup of tenancy, open up AWS Step functions [console](https://console.aws.amazon.com/states/home), observe the status of the step function that starts with "TenantInfraStateMachine". The Last step of the step function creates a A record in Route53 which will take some time to propagate. So, wait for few minutes and then open up the admin page for the tenant you just created using a private browser window by going to the below url format. (with the above example it would be https"//tenant-1.thinkr.dev/admin)
+To monitor the setup of tenancy, open up AWS Step functions [console](https://console.aws.amazon.com/states/home), observe the status of the step function that starts with "TenantInfraStateMachine". The Last step of the step function creates a A record in Route53 which will take some time to propagate. So, wait for few minutes and then open up the admin page for the tenant you just created using a private browser window by going to the below url format. (with the above example it would be https://tenant-1.thinkr.dev/admin)
 ```
 https://[tenantSubDomain].[SaaSdomain].[TLD]/admin
 ```
