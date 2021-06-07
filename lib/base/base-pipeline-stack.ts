@@ -111,7 +111,7 @@ export default class PipelineStack extends Stack {
       // Where the source can be found
       sourceAction: new CodeCommitSourceAction({
         actionName: 'CodeCommit',
-        branch: 'master',
+        branch: 'main',
         output: sourceArtifact,
         repository: code,
       }),

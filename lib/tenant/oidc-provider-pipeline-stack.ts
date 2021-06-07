@@ -156,6 +156,7 @@ export class PipelineStack extends Stack {
     const sourceAction = new codepipelineActions.CodeCommitSourceAction({
       actionName: 'CodeCommit_Source',
       repository: code,
+      branch: 'main',
       output: sourceOutput,
       trigger: CodeCommitTrigger.NONE,
     });
