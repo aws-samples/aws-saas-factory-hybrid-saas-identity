@@ -1,0 +1,15 @@
+{
+  "name": "add_ldap_user_group",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@dazn/lambda-powertools-logger": "^1.28.1",
+    "ldapjs": "^2.2.4"
+  }
+}

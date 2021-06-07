@@ -1,0 +1,67 @@
+{
+    "authtype": "cognito",
+    "clientId": "<BACKEND_COGNITO_USERPOOL_APP_CLIENT_ID>",
+    "configuration": {
+        "claims": {
+            "address": [
+                "address"
+            ],
+            "email": [
+                "email",
+                "email_verified"
+            ],
+            "phone": [
+                "phone_number",
+                "phone_number_verified"
+            ],
+            "profile": [
+                "birthdate",
+                "family_name",
+                "gender",
+                "given_name",
+                "locale",
+                "middle_name",
+                "name",
+                "nickname",
+                "picture",
+                "preferred_username",
+                "profile",
+                "updated_at",
+                "website",
+                "zoneinfo"
+            ],
+            "tenant": [
+                "tenantid"
+            ]
+        },
+        "conformIdTokenClaims": false,
+        "cookies": {
+            "keys": "mysaasapp/tenant-1/cookie-secrets",
+            "long": {
+                "maxAge": 86400000,
+                "signed": true
+            },
+            "short": {
+                "signed": true
+            }
+        },
+        "formats": {
+            "AccessToken": "jwt"
+        },
+        "jwks": "mysaasapp/tenant-1/jwks",
+        "ttl": {
+            "AccessToken": 3600,
+            "AuthorizationCode": 600,
+            "DeviceCode": 600,
+            "IdToken": 3600,
+            "RefreshToken": 86400
+        }
+    },
+    "domain": "<TENANT_EMAIL_DOMAIN>",
+    "id": "tenant:<TENANT_UUID>",
+    "issure": "<OIDC_APIGW_ENDPOINT>",
+    "tenant_id": "<TENANT_UUID>",
+    "type": "tenant",
+    "userPoolId": "<BACKEND_COGNITO_USERPOOL_ID>",
+    "userPoolRegion": "<BACKEND_COGNITO_USERPOOL_REGION>"
+}

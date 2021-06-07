@@ -1,0 +1,47 @@
+{
+    "backchannelLogout": {
+        "enabled": false
+    },
+    "claimsParameter": {
+        "enabled": true
+    },
+    "clientCredentials": {
+        "enabled": true
+    },
+    "devInteractions": {
+        "enabled": false
+    },
+    "encryption": {
+        "enabled": false
+    },
+    "id": "features",
+    "introspection": {
+        "enabled": true
+    },
+    "registration": {
+        "enabled": false
+    },
+    "registrationManagement": {
+        "enabled": false
+    },
+    "requestObjects": {
+        "mergingStrategy": {
+            "name": "lax",
+            "whitelist": [
+                "code_challenge",
+                "nonce",
+                "state"
+            ]
+        },
+        "request": false,
+        "requestUri": true,
+        "requireUriRegistration": true
+    },
+    "revocation": {
+        "enabled": true
+    },
+    "sessionManagement": {
+        "enabled": false
+    },
+    "type": "features"
+}

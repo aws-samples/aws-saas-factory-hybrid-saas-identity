@@ -1,0 +1,18 @@
+{
+  "cognito": {
+    "auth_endpoint": "<FEDERATION_COGNITO_USERPOOLURL>/oauth2/authorize",
+    "clientid": "<FEDERATION_COGNITO_USERPOOL_APP_CLIENT_ID>",
+    "clientsecretarn": "/mysaasapp/<TENANT#>/federationclientsecret",
+    "idp_identifier": "COGNITO",
+    "response_type": "code",
+    "scope": "email%20openid%20phone%20profile",
+    "userpoolid": "<FEDERATION_COGNITO_USERPOOLID>",
+    "userpoolregion": "<FEDERATION_COGNITO_USERPOOL_REGION>"
+  },
+  "emaildomain": "<TENANT_EMAIL_DOMAIN>",
+  "id": "<TENANT_UUID>",
+  "name": "<TENANT_NAME>",
+  "onboarded_date": "<TENANT_ONBOARDED_DATE>",
+  "subdomain": "<TENANT#>",
+  "tier": "<TENANT_TIER>"
+}
