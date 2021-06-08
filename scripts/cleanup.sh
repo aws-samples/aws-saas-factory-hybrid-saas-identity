@@ -52,3 +52,6 @@ npm run cdk destroy HSI--Pipeline--OidcProvider -- -a "npx ts-node bin/oidcprovi
 
 # Destroy base Stack
 npm run cdk destroy HSI--Pipeline--Base -- -a "npx ts-node bin/base_app.ts" -c codecommitrepo=$repositoryName -c hostedzoneid=$hostedZoneId --force
+
+# Print the warning about Route53, S3 buckets, Code Commit repo
+echo "There will still be records in route53 hosted zone, and code commit repo that could have been part of pre-requisites. For safety reasons, this script did not delete them. Please delete them manually. Also, there would typically be artifact buckets created in S3 by codepipeline. please delete them manually."
