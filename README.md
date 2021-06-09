@@ -27,33 +27,43 @@
 
 ## Introduction
 ### Identity in a SaaS environment
-In a typical Software as a Service(SaaS) environment, users would authenticate into the SaaS Application. The Identity Provider(IDP) owned by the SaaS provider would accept the authenticaiton request, authorize the user and issue some sort of token back to the SaaS application with the tenant context of that particular user. As the SaaS application grows in popularity the number of tenants might grow and the IDP would ideally be able to scale to the needs. A premise here is that all tenants are maintaining their user identities with the SaaS providers IDP using some sort of user management experience included within the SaaS environment. This is depicted in the diagram below
+In a typical software-as-a-service (SaaS) environment, your SaaS application would rely on an identity provider (IDP) to authenticate users access to the system within the context of a given tenant. This IDP accepts the authentication request, authenticates the user, and issues tokens that include the data about the user and its tenant context.
+
+To support this experience, SaaS providers will often leverage one of the existing IDPs (Amazon Cognito, Okta, etc.) to implement their identity experience. This allows them to manage and control the entire footprint of their identity experience. The diagram below provides a high-level view of this model where tenant users are authenticated against an IDP managed by the SaaS provider.
 
 <img src="./resources/images/saas_identity_nirvana.png" alt="drawing" width="800"/>
 
-But this is an ideal state that is too good to be held true forever, may be viable in the initial stages of the SaaS ISV, but sooner or later comes a “big” tenant or a tenant belonging to a heavily regulated industry that all of a sudden may not be willing to have the user identities residing inside the SaaS provider’s IDP. So, let's look at a real-world example, shown in the diagram below.
+Figure 1: Typical SaaS Identity landscape
+
+While this model maximizes control for the SaaS provider, there are instances where business or customer requirements may add some complexity to this approach. In some instances, customers may come to you that have existing IDPs. These customers may be unwilling to use your internally managed IDP for their solution. The example below provides a view of what this scenarios might look like.
 
 <img src="./resources/images/saas_identity_real_world.png" alt="drawing" width="800"/>
 
-As you can see, in reality, most of the tenants would probably already have an IDP system in place. This is where they have tools, processes and governance in place to onboard users, manage permissions etc. SaaS ISVs strive to provide frictionless experience to their tenants in adopting their service and identity is usually the first leg of this journey. At AWS SaaS Factory, as part of SaaS migration patterns we talk about Identity migration approaches. Briefly, reiterated here, to "bring" in tenant user identities, there are three options:
+Figure 2: SaaS Identity in reality
 
-1. One time migration.
-2. Just in time migration.
-3. Hybrid identity.
+In this diagram, you’ll see that we have three tenants that are using three different identity experiences. Tenant2 is using our internally managed IDP solution, while Tenant1 and Tenant 3 are using their own identity providers.
 
-We will focus on #3, hybrid identity model in this topic exclusively. Going back to the real-world example, let's add in few more details to the tenant backend IDPs. 
+While this may seem like a classic identity federation model, it presents some specific challenges for our SaaS environment. How do you onboard tenants with these external identity providers? How do you generate tenant-aware tokens when using external identity providers that have no tenant context? How do we make all this work seamlessly without impacting the downstream implementation of our services that rely on these tokens?
+
+This is the precise focus of the solution that we’ve created. Our goal here is to outline an approach that supports a mix of internal and external identity providers without undermining our need to have a frictionless onboarding and authentication experience.
+
+### Exploring a Sample Environment
+
+To better understand this problem, let’s look at a sample environment. If we go back to our prior example and fill in some more details, you can start to see how/where the support for multiple IDPs introduces some challenges in our environment.
 
 <img src="./resources/images/saas_identity_real_world_details.png" alt="drawing" width="800"/>
 
-See tenant-1 in this picture, this is a tenant who has their users in their own IDP, which happens to be OpenID Connect compliant. Tenant-2 is ok with using SaaS providers IDP. Tenant-3, just like tenant-1 has its own IDP, which happens to be a simple directory server, LDAP compatible. This mix of SaaS providers own identity solution with a mix of externally hosted identity solutions introduce complexity into the identity layer which traverses throughout the SaaS architecture, let's look at the challenge more next.
+Figure 3: SaaS Identity in reality with IDP details
 
-### Challenge with disparate backend IDPs
+See tenant-1 in this picture, this is a tenant who has their users in their own IDP, which happens to be OpenID Connect compliant. Tenant-2 is ok with using SaaS providers IDP. Tenant-3, just like tenant-1 has its own IDP, which happens to be a simple directory server, LDAP compatible. This mix of SaaS providers own identity solution with a mix of externally hosted identity solutions introduce complexity into the identity layer which traverses throughout the SaaS architecture, let's look at the challenge more next.
 
 Identity is a fundamental service in SaaS control plane that is used throughout the architecture at various levels to make granular decisions about permissions and provide least privileged access to underlying resources at run time. SaaS builders rely on Identity artifacts to enforce these policy decisions dynamically. Introducing disparate tenant specific identity systems could force the SaaS builders to develop their own custom logic to handle the tenant specific nuances in these identity artifacts. Sooner, rather later this could get out of hand from a management standpoint, but more importantly hard to trace bugs could be introduced. So, instead, we need a centralized mechanism that hides away these complexities from the SaaS builder. Let’s look at how a SaaS provider could tie these disparate identity systems together and still provide a cohesive experience to the SaaS developers using Hybrid SaaS Identity next.
 
 ### Hybrid SaaS Identity - conceptual model
 
 <img src="./resources/images/saas_identity_conceptual_model.png" alt="drawing" width="800"/>
+
+Figure 4: Hybrid SaaS Identity conceptual model
 
 Hybrid Identity is a design pattern to solve the challenge we discussed above. Hybrid SaaS Identity (HSI), this repository is a reference solution that implements this pattern using Amazon Cognito. More on the technical details later, let’s look at the conceptual model first. Hybrid Identity comprises mainly of three components that work hand in glove, let's look at each one with their responsibilities:
 
@@ -68,13 +78,15 @@ Let's understand more about this conceptual model using a reference solution imp
 
 <img src="./resources/images/saas_identity_reference_solution.png" alt="drawing" width="800"/>
 
-SaaS builders often use OpenID Connect (OIDC) compliant identity provider (IDP) for their web applications and API's. SaaS Builders on AWS use Amazon Cognito for their AuthN/Z, which is an OpenID Connect compliant IDP.
+Figure 5: Hybrid SaaS Identity reference solution
 
-HSI is a reference implementation of a solution for Identity layer for SaaS Control plane. A core component of HSI is open source OIDC provider called [node-oidc-provider](https://github.com/panva/node-oidc-provider) extended to be multi-tenant by configuration. HSI is designed to be pluggable with out of the box modules for connecting to LDAP and Amazon Cognito. HSI is architected on AWS serverless stack with the pooled multi-tenancy [pattern](https://d0.awsstatic.com/whitepapers/saas-solutions-on-aws-final.pdf) and because of that is can be easily used for silo style deployments as well.
+SaaS builders often use OpenID Connect (OIDC) compliant identity provider (IDP) for their web applications and API's. SaaS Builders on AWS use Amazon Cognito for their AuthN/Z, which is an OpenID Connect compliant IDP. A core component of HSI is open source OIDC provider called [node-oidc-provider](https://github.com/panva/node-oidc-provider) extended to be multi-tenant by configuration. HSI is designed to be pluggable with out-of-the-box modules for connecting to LDAP and Amazon Cognito. HSI is architected on AWS serverless stack with the pooled multi-tenancy [pattern](https://d0.awsstatic.com/whitepapers/saas-solutions-on-aws-final.pdf) and because of that is can be easily used for silo style deployments as well.
 
 The goal of this Hands-on SaaS style solution is to give you, the SaaS ISV builder, an experience at understanding the architecture of HSI by building the foundational constructs using a simple "Hello World" style SaaS App with a hypothetical scenario. We have used AWS CDK to build this solution and we will show snippets of code along the way to help illustrate the key design decisions made for multi-tenancy. Here is a quick visual on the steps that we will perform. 
 
 <img src="./resources/images/steps.png" alt="drawing" width="800"/>
+
+Figure 6: Hybrid SaaS Identity Handson steps
 
 Refer to the [developer guide](./developer-guide.md) at any point for a deep dive on HSI. Without further ado, let's deploy HSI and test it by onboarding few tenants.
 
@@ -118,6 +130,8 @@ The response from the execution of this script will be printed to console as wel
 
 <img src="./resources/images/test_stack_output.png" alt="drawing" width="600"/>
 
+Figure 7: Sample tenant stack script output
+
 ###  Monitor
 The way we have packaged HSI, most of the infrastructure is actually created as a result of the execution of the CodePipeline(s) that the bootstrap script creates. Hence, monitoring the CodePipeline execution to ensure successfull completion is important before you proceed further. 
 
@@ -155,6 +169,10 @@ This PUT request will respond back with done if the tenancy provisioning workflo
     "done": true
 }
 ```
+<img src="./resources/images/onboarding_payload_postman.png" alt="drawing" width="600"/>
+
+Figure 8: Federation http PUT API call using Postman
+
 repeat this to onboard two more tenants, tenantSubDomain has to be unique, so should the emailId for each tenant. As an example the JSON payloads for the next two tenants would be:
 ```json
 {
@@ -179,6 +197,8 @@ Here is a quick glance of the steps involved in provisioning, refer to [this](./
 
 <img src="./resources/images/tenant_onboarding_example.png" alt="drawing" width="400"/>
 
+Figure 9: Tenant provisioning workflow - step function
+
 #### Monitor tenant provisioning
 To monitor the setup of tenancy, open up AWS Step functions [console](https://console.aws.amazon.com/states/home), observe the status of the step function that starts with "TenantInfraStateMachine". The Last step of the step function creates a A record in Route53 which will take some time to propagate. So, wait for few minutes and then open up the admin page for the tenant you just created using a private browser window by going to the below url format. (with the above example it would be https://tenant-1.thinkr.dev/admin)
 ```
@@ -189,6 +209,8 @@ You will be prompted to enter the username / password. use the email address tha
 Here is example of the webpage response for /admin showing the access token, id token in raw and decoded format. Copy the id_token value to some place you can retrieve when needed to set up federation next.
 
 <img src="./resources/images/admin_id_token.png" alt="drawing" width="400"/>
+
+Figure 10: Sample ID token as a result of an admin user login
 
 ### Setting up federation to backend IDP
 To setup federation, similar to what we did to setup tenancy, we will execute a http PUT call. You would need two things for the /federation api call. 1/ the ID token of an Admin user. 2/ the JSON payload that has the IDP details. Open up your http client, we will use postman here, start a PUT request, with Authorization type as Bearer Token, paste the ID token you saved from [this](#Monitor-tenant-provisioning) previous step. Go to Body and copy paste the first JSON payload from [this](./hsi.out/tenantstack.out) file. Execute the http api call and you should get a "done" message as response.
@@ -222,7 +244,7 @@ This PUT request will respond back with done if the federation setup has kicked 
 
 <img src="./resources/images/federation_payload_postman.png" alt="drawing" width="600"/>
 
-Figure: Federation http PUT API call using Postman
+Figure 11: Federation http PUT API call using Postman
 
 For example, I will open up a private browser window and go to admin page of my first tenant available at https://tenant-1.thinkr.dev/admin ,log in using the email, password that I received in a verification email from Cognito. Complete the initial password reset flow. I will copy the ID token value from the browser and keep it handy. This token is valid for an hour by default. Next I will execute the ssm get-parameter aws cli command to retrieve the tenant api endpoint for federation. I will copy the url and keep it handy. Next, I will open my postman client, create a new basic http request, change method to PUT, enter federation api url that I saved earlier, I will go to Authorization tab, choose the type as bearer token and enter the ID token that I saved earlier as value. I will then proceed to the Body tab, paste in the first JSON payload from the [tenantstack.out](./hsi.out/tenantstack.out) file. I will hit Send next, if everything is correct, I will get a response "done". I will [monitor](#Monitor-federation) the federation step function to ensure it is completed successfully before proceeding to add federation to the remaining two tenants. I will open a private browser window each time to avoid cognito session re-use and go to the individual tenant admin page to get the ID token. I will repeat the same steps for tenant-2, tenant-3 by obtaining the corresponding ID token from the /admin page, as well as the corresponding JSON payload from the tenantstack.out file.
 
@@ -232,6 +254,8 @@ Once you are done adding federation to all three tenants, what you have is a Saa
 Here is a quick glance of the steps involved in adding federation, refer to [this](./developer-guide#Tenant-Federation) section in the developer guide for more detailed information about each step.
 
 <img src="./resources/images/tenant_federation_example.png" alt="drawing" width="400"/>
+
+Figure 12: Tenant federation workflow - step function
 
 #### Monitor federation
 To monitor the setup of federation, open up AWS Step functions console using this [link](https://console.aws.amazon.com/states/home), observe the status of the step function that starts with "TenantFederationStateMachine".
@@ -248,7 +272,7 @@ For example I will go to https://tenant-1.thinkr.dev, use the email address and 
 
 <img src="./resources/images/tenant_1_id_token.png" alt="drawing" width="600"/>
 
-Figure: Showing the tenantid custom claim
+Figure 13: Sample ID token as a result of an tenant-1 backend user login (Cognito)
 
 Notice the "custom:tenantid" claim in the "id_token_payload", the value of this key is the tenant UUID that was established as part of onboard API call.
 
@@ -262,10 +286,12 @@ In my case, I will go to https://tenant-3.thinkr.dev and login with user1@auth.t
 
 <img src="./resources/images/tenant_3_id_token.png" alt="drawing" width="600"/>
 
+Figure 14: Sample ID token as a result of an tenant-3 backend user login (LDAP)
+
 Notice the same "custom:tenantid" claim in the "id_token_payload" and the same issuer "iss". Backend API resources who typically introspect the id token to extract tenant context can reliably use this custom claim to interpret the tenant of the request they are about to process. With this you have successfully deployed and tested HSI solution, before you close out, head to the [next](#Conclusion) section.
 ## Conclusion
-In this Hybrid SaaS Identity hands-on SaaS solution, you have created base infrastructure, onboarded three tenants, added federation to backend IDP's. By visitng the root page of the tenant subdomain as well as the /admin page, you observed that you could log in with either admin user or the backend IDP user and still get an ID token issued by Cognito with tenant UUID as a custom claim. This is the conformity in experience that HSI is built for, seamlessly federating into both legacy and OIDC compatible IDP backends. Read the [developer guide](./developer-guide.md) for a detailed walkthrough of how HSI is built, functions and aspects like scaling. 
-> :eyes: The resources you have created in this handson saas solution might be outside of the free tier limits, so please visit the next section to [cleanup](#Cleanup).
+In this Hybrid SaaS Identity hands-on SaaS solution, you have created base infrastructure, onboarded three tenants, added federation to backend IDP's. By visitng the root page of the tenant subdomain as well as the /admin page for, you observed that you could log in with either admin user or the backend IDP user belonging to Cognito or Simple Directory service and still get an ID token issued by Cognito with tenant context (tenant UUID as a custom claim). This is the conformity in experience that HSI is built for. Read the [developer guide](./developer-guide.md) for a detailed walkthrough of how HSI is built, functions and aspects like scaling. 
+> :information_source: The resources you have created in this handson saas solution might be outside of the free tier limits, so please visit the next section to [cleanup](#Cleanup).
 
 ## Cleanup
 While trying out this solution, there could be situations where you want to start over, so here are the most common scenarios and how you reset them.
@@ -306,7 +332,7 @@ To remove a tenant altogether, run through these steps.
 
 ### Delete HSI solution
 Most of the infrastructure created in this solution is done using Codepipeline and step functions. So, destroying just the CDK stacks deployed will not delete everything. Run the below script that deletes all the custom domain mappings, secrets, parameters, certs and cloudformation stacks created by the HSI CodePipeline and Onboarding orchestrator before it proceeds to delete the base, oidc-provider CDK stacks. The prefix used by ssm parameters and secrets is "/mysaasapp" and this cleanup script greedily deletes all resources from secrets manager, parameter store with that prefix. 
-> :information_source: This cleanup script will delete the pre-requisite hostedzone, codecommit repo, please delete them manually via console or CLI.
+> :information_source: This cleanup script will not delete the pre-requisite hostedzone, codecommit repo, please delete them manually via console or CLI.
 
 ```shell
 chmod +x ./scripts/cleanup.sh
