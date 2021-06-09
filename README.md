@@ -100,14 +100,14 @@ The base architecture of HSI includes a sample client, a sample resource that th
 ### Pre-requisites
 Make sure you have the below in place to proceed further in consuming this solution.
 1. Note down the hostedzone id by listing the hosted zones in your AWS account by following [this](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ListInfoOnHostedZone.html) guide. we need this because we will use subdomain to lookup the tenancy of incoming request.
-2. AWS CLI [configured](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) and AWS CDK CLI [bootstrapped](https://docs.aws.amazon.com/cdk/api/latest/docs/pipelines-readme.html#cdk-environment-bootstrapping) on your local machine where you are going to run the next steps from. We need this because HSI is packaged as a CDK App for deployment. For e.g. to bootstrap cdk against a particular aws account, aws region, open up your terminal and issue this command: 
+2. AWS CLI [configured](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html) and AWS CDK CLI [bootstrapped](https://docs.aws.amazon.com/cdk/api/latest/docs/pipelines-readme.html#cdk-environment-bootstrapping) on your local machine where you are going to run the next steps from. We need this because HSI is packaged as a CDK App for deployment. For e.g. to bootstrap cdk against a particular aws account, aws region, open up your terminal and issue this command after replacing 123456789012 with your AWS account ID and us-east-1 with your AWS region: 
     ```shell
     env CDK_NEW_BOOTSTRAP=1 npx cdk bootstrap \
     --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess \
     'aws://123456789012/us-east-1'
     ```
 3. Install git-remote-codecommit, follow this [link](https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-git-remote-codecommit.html).
-4. [Increase](https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html) Service Quota for AWS Codebuild "Maximum number of concurrent running builds" to atleast 10. Use this deep [link](https://console.aws.amazon.com/servicequotas/home/services/codebuild/quotas/L-75822022).
+4. [Increase](https://docs.aws.amazon.com/servicequotas/latest/userguide/request-quota-increase.html) Service Quota for AWS Codebuild "Maximum number of concurrent running builds" to atleast 11. Use this deep [link](https://console.aws.amazon.com/servicequotas/home/services/codebuild/quotas/L-75822022).
 5. Postman, curl or any other API client.
 
 ### Bootstrapping
