@@ -39,7 +39,7 @@ Let’s start with a high-level architecture walkthrough.
 ## High-Level Architecture
 
 We built HSI as a serverless application using mainly Amazon Cognito,
-Amazon ApiGateway, AWS Lambda, Amazon DynamoDB as key services among
+Amazon API Gateway, AWS Lambda, Amazon DynamoDB as key services among
 several other. For deployment it is packaged as a CDK construct, as well
 as CDK App. From a SaaS architectural style perspective, it is built as
 pooled multi-tenant, so you can use a single HSI deployment to support
@@ -51,7 +51,7 @@ this point is written in Nodejs and CDK portion of the solution is
 written in Typescript. Here is a diagram depicting HSI architecture at a
 high level.
 
-![](./resources/images/high_level_architecture.png)
+<img src="./resources/images/high_level_architecture.png" alt="drawing" width="800"/>
 
 Figure. 2: Hybrid SaaS Identity Architecture.
 
@@ -60,10 +60,10 @@ and as mentioned at the beginning, this proxy layer is built using Node
 OIDC Provider. We leverage Cognito UserPool Identity provider to
 federate the AuthN to OIDC Proxy. OIDC Proxy than executes the AuthN
 request with the backend IDP that is preconfigured for that incoming
-requests tenant context. OIDC Proxy has built in modules that currently
+request's tenant context. OIDC Proxy has built in modules that currently
 support Cognito, LDAP type backend IDP’s. OIDC Proxy hosts a sign in
 page built using Koa framework. Persistence is provided using DynamoDB,
-Parameter store and Secrets manager.
+Parameter store and Secrets Manager.
 
 Remaining components in this architecture support the reference solution
 to showcase the capabilities of HSI. In most cases they are just mock
@@ -81,9 +81,9 @@ onboarded and is in fact needed to onboard tenants. Here is a list of Cloudforma
 
 |Name|Resources|Description|
 |----|---------|-----------|
-|HSI--Pipeline--Base|CDKPipeline, CodeBuild, SSM Parameters|Self Mutating CDK Pipeline that deploys the remaining Base Stacks.|
+|HSI--Pipeline--Base|CDKPipeline, CodeBuild, SSM Parameters|Self-Mutating CDK Pipeline that deploys the remaining Base Stacks.|
 |HSI--Pipeline--OidcProvider|CodePipeline, CodeBuild, Lambda Function|CodePipeline that creates the oidc-provider Function, API.|
-|Dev-AwsSaaSFactoryHybridIdentityBaseStackBaseStack|Cognito Userpool, DynamoDB tables, Step Function, SSM Parameters, Secrets Manager|Creates the Cognito userpool that hosts the federation Identity provider, client, configuration, Also creates the step function that adds to base features configuration to the DynamoDB table used by oidc-provider.|
+|Dev-AwsSaaSFactoryHybridIdentityBaseStackBaseStack|Cognito UserPool, DynamoDB tables, Step Function, SSM Parameters, Secrets Manager|Creates the Cognito userpool that hosts the federation Identity provider, client, configuration, Also creates the step function that adds to base features configuration to the DynamoDB table used by oidc-provider.|
 |Dev-AwsSaaSFactoryHybridIdentityBaseStacktenantservice*|Tenant API, Lambda Functions, Step Functions|Tenant microservice with onboard, federation features.|
 |Dev-AwsSaaSFactoryHybridIdentityBaseStackoidcresource*|Resource API, Lambda Function|Sample resource API that just echoes back the decoded JWT tokens.|
 |Dev-AwsSaasFactoryHybridIdentityBaseStackoidcclient*|Client API, Lambda Function, SSM Parameters|Sample client that redirects straight to login page after looking up tenant using the Authorizer context.|
@@ -100,8 +100,8 @@ with a brief description of each.
 | Tenants table                              | DynamoDB Table, GSI                                                                                 | Persistence layer for tenant micro-service that stores the definition, configuration associated with each tenant. Includes information like tenant UUID, UserPool ID, UserPool App Client ID. Look at an example here.                                                                                                                                        |
 | Oidc-Provider features state machine       | Step Function, AWS Lambda                                                                           | Adds the base set of features that suit the SaaS provider, these features tune the way oidc-provider behaves at run time. Look at the default we use here. Read more about these in the upstream node-oidc project [here](https://github.com/panva/node-oidc-provider/blob/main/docs/README.md#features).                                                     |
 | Oidc resource [SaaS backend API]         | CDK Construct, Amazon API Gateway, Lambda Authorizer, AWS Lambda                                    | Packaged as a CDK Construct, this simple API just checks the validity of the JWT token in the incoming request and responds with a warm cookie message and decoded JWT contents.                                                                                                                                                                              |
-| Oidc client [SaaS App/ Front end client] | CDK Construct, Amazon APIGateway, Lambda Authorizer, AWS Lambda                                     | This is a purposefully minimal front end app built to retain the focus on the identity aspects of the solution. It uses a combination of Amazon API Gateway VTL to redirect / or /admin to the corresponding Cognito UserPool after looking up these details based on the subdomain. The lookup response is cached at the authorizer for performance reasons. |
-| Tenant micro-service                       | CDK Construct, Amazon APIGateway, AWS Step Functions, Lambda Authorizer, AWS Lambda, DynamoDB Table | Tenant micro-service that has /onboard and /federate functionality. Both these operations are orchestrated by Step Functions and implemented by Lambda functions. We will go through these in depth in the tenant onboarding section of this guide.                                                                                                           |
+| Oidc client [SaaS App/ Front end client] | CDK Construct, Amazon API Gateway, Lambda Authorizer, AWS Lambda                                     | This is a purposefully minimal front end app built to retain the focus on the identity aspects of the solution. It uses a combination of Amazon API Gateway VTL to redirect / or /admin to the corresponding Cognito UserPool after looking up these details based on the subdomain. The lookup response is cached at the authorizer for performance reasons. |
+| Tenant micro-service                       | CDK Construct, Amazon API Gateway, AWS Step Functions, Lambda Authorizer, AWS Lambda, DynamoDB Table | Tenant micro-service that has /onboard and /federate functionality. Both these operations are orchestrated by Step Functions and implemented by Lambda functions. We will go through these in depth in the tenant onboarding section of this guide.                                                                                                           |
 | Base Parameters                            | AWS Systems Manager Parameter store.                                                                | Various baseline infrastructure stack parameters used here and to support tenant specific components are stored in parameter store for easy retrieval/lookup in CDK / CloudFormation.                                                                                                                                                                         |
 
 As you can see in the diagram below, the general principle we followed
@@ -109,7 +109,7 @@ for categorizing some component of the architecture to be included in
 baseline was to see if it is necessary regardless of a tenant or to
 support onboarding one later.
 
-![](./resources/images/base_infrastructure.png)
+<img src="./resources/images/base_infrastructure.png" alt="drawing" width="800"/>
 
 Figure. 3: Hybrid SaaS Identity baseline infrastructure
 
@@ -132,13 +132,13 @@ components that are created per each tenant.
 |Tenant Subdomain mapping|APIGW subdomain mapping|Mapping tenant subdomain to oidc-client api base path using the tenant certificate.|
 |Tenant Subdomain DNS entry|Route53 A record|Tenant Subdomain mapped to the APIGW CloudFront distribution ID.|
 |Oidc-provider proxy|CDK oidc-provider construct|Two situations when you would need to create a new instance of oidc-provider: If the tenant backend IDP needs VPC connectivity then oidc-provider needs to be deployed to that VPC or a peered VPC. If the tenant needs to be sharded to a new oidc-provider to limit blast radius.|
-|Tenant Secrets|Secrets Manager|Each tenant will have it’s own JWKS, Cookie signing key and client secret.|
+|Tenant Secrets|Secrets Manager|Each tenant will have its own JWKS, Cookie signing key and client secret.|
 |UserPool Identity provider|Cognito UserPool Identity provider|Each tenant will have an Identity Provider created in Cognito.|
-|UserPool App Client|Cognit UserPool App Client|Each tenant will have a App Client enabled to use the tenant specific Identity Provider only.|
+|UserPool App Client|Cognit UserPool App Client|Each tenant will have an App Client enabled to use the tenant specific Identity Provider only.|
 |Tenant oidc-provider config|DynamoDB item|Each tenant will be defined in oidc-provider using a json configuration record that will define attributes like custom claim mappings, backend IDP details, JWT issuer among other key aspects. More about this in the authentication section.|
 |Tenant Client oidc-provider config|DynamoDB item|Each tenant will get a client created in oidc-provider with a corresponding client secret. More about this in the authentication section.|
 
-![](./resources/images/tenant_infrastructure.png)
+<img src="./resources/images/tenant_infrastructure.png" alt="drawing" width="800"/>
 
 Figure. 4: Hybrid SaaS Identity Tenant specific infrastructure
 
@@ -157,13 +157,13 @@ determines the UserPool ID, UserPool App Client ID to use for the
 authorize api call with Cognito. There is additional information that is
 retrieved as well such as claims, identity provider etc.
 
-![](./resources/images/ingress_routing.png)
+<img src="./resources/images/ingress_routing.png" alt="drawing" width="800"/>
 
 Here is a brief step by step:
 
 1.  Browser seeks tenant-1.thinkr.dev
 
-2.  Route53 DNS service responds with the Cloudfront distribution for
+2.  Route53 DNS service responds with the CloudFront distribution for
     APIGW.
 
 3.  APIGW Custom domain mapping points this incoming request to the
@@ -222,7 +222,7 @@ gateway immediately responds back with an acknowledgement.
 Asynchronously the step function executes the steps depicted in the
 following diagram.
 
-![](./resources/images/tenant_onboarding.png)
+<img src="./resources/images/tenant_onboarding.png" alt="drawing" width="800"/>
 
 All of the 10 steps outlined are run using the same lambda function
 under “resources/add_tenant_infra_lambda”. Each time step function
@@ -242,7 +242,7 @@ doing this to highlight the JWT tokens vended by Cognito and show the
 custom claim tenantuuid that we have injected using oidc-provider. Here
 is a quick screenshot of how the response looks like in firefox browser.
 
-![](./resources/images/response_tokens.png)
+<img src="./resources/images/admin_id_token.png" alt="drawing" width="400"/>
 
 ## Tenant Federation
 
@@ -294,7 +294,7 @@ step function either by the
 “resources/finish_oidc_provider_pipeline_lambda” lambda function
 depending on whether the oidc-provider CodePipeline was run.
 
-![](./resources/images/federation_provisioning.png)
+<img src="./resources/images/federation_provisioning.png" alt="drawing" width="800"/>
 
 The second step of the federation workflow adds the remaining pieces of
 configuration and AWS services necessary to support the federation as
@@ -350,7 +350,7 @@ requires that in federation use-cases UserPool app client has to be
 mapped to an identity provider 1:1 and we did just that as shown in the
 below diagram.
 
-![](./resources/images/app_client_mapping.png)
+<img src="./resources/images/app_client_mapping.png" alt="drawing" width="800"/>
 
 A typical Authorization code flow, which is what we use in the SaaS app
 in our solution, looks like the below diagram. Key point to note here is
@@ -359,7 +359,7 @@ flow, 1\\ where Cognito federates into oidc-provider (Step-3) and 2\\
 where oidc-provider reaches out to the backend IDP to get the AuthN
 performed.
 
-![](./resources/images/authorization_code_flow.png)
+<img src="./resources/images/authorization_code_flow.png" alt="drawing" width="800"/>
 
 ## Scaling
 
@@ -383,17 +383,8 @@ multi-tenancy is discussed at length in
 [this](https://aws.amazon.com/blogs/apn/multi-tenant-storage-with-amazon-dynamodb/)
 blog post.
 
-![](./resources/images/sharding.png)
+<img src="./resources/images/sharding.png" alt="drawing" width="800"/>
 
 ## Conclusion
 
-You have now a good deep dive view of what HSI was built to solve, what
-went into building HSI and how various modules are stitched together.
-Identity is a complex topic, with SaaS adding a whole extra dimension. A
-key tenet of HSI reference solution was to encapsulate this complexity
-in consumable, easily deployable package. This developer guide is an
-attempt to unpack that complexity layer by layer to show enough detail
-to help solidify some of the key design patterns we adopted along the
-way. This entire code base is open-sourced, we welcome any contributions
-for bug fixes, improvements and additional features including
-corrections, additions to this developer guide.
+You have now a good deep dive view of what HSI was built to solve, what went into building HSI and how various modules are stitched together. A key tenet of HSI reference solution was to encapsulate the SaaS identity in consumable, easily deployable package. We welcome any contributions for bug fixes, improvements and additional features including corrections, additions and feedback to this developer guide.
