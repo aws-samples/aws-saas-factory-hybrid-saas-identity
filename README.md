@@ -1,7 +1,7 @@
 # Hybrid SaaS identity reference solution using Amazon Cognito
 - [Introduction](#Introduction)
     - [Identity in a SaaS environment](#Identity-in-a-SaaS-environment)
-    - [Challenge with disparate backend IDP's](#Challenge-with-disparate-backend-IDPs)
+    - [Exploring a Sample Environment](#Exploring-a-Sample-Environment)
     - [Hybrid SaaS Identity - conceptual model](#Hybrid-SaaS-Identity---conceptual-model)
     - [Hybrid SaaS Identity - reference solution](#Hybrid-SaaS-Identity---reference-solution)
 - [Setting up the environment](#Setting-up-the-environment)
