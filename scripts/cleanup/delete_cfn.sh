@@ -9,7 +9,8 @@ function delete_cfn_stack() {
 }
 
 function get_stacks_starting_with {
-  echo $(aws cloudformation list-stacks --query "StackSummaries[?starts_with(StackName, $1)]|[*].[StackName]" --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE --output text)
+  stackName="${1}"
+  echo $(aws cloudformation list-stacks --query "StackSummaries[?starts_with(StackName, '$stackName')]|[*].[StackName]" --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE --output text)
 }
 
 
@@ -32,7 +33,7 @@ function delete_cfn_stacks() {
   done
 
   # Delete the oidc client stacks
-  stack1=$(get_stacks_starting_with Dev-AwsSaasFactoryHybridIdentityBaseStackoidcclient)
+  stack1=$(get_stacks_starting_with 'Dev-AwsSaasFactoryHybridIdentityBaseStackoidcclient')
   if [ "$stack1" ]
     then
       delete_cfn_stack $stack1
