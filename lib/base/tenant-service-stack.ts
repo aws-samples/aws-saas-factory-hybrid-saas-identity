@@ -358,6 +358,7 @@ export default class TenantServiceStack extends Stack {
       stateMachine: tenantFederationStateMachine,
       inputPath: '$.addTenantUserPool',
       integrationPattern: sfn.IntegrationPattern.RUN_JOB,
+      resultPath: sfn.JsonPath.DISCARD,
     });
 
     // This step creates a ACM cert for the tenant subdomain. e.g. tenant-1.thinkr.dev
