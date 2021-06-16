@@ -357,6 +357,7 @@ export default class TenantServiceStack extends Stack {
     const addFederationToInternalCognitoUserPool = new tasks.StepFunctionsStartExecution(this, 'Internal Cognito federation workflow', {
       stateMachine: tenantFederationStateMachine,
       inputPath: '$.addTenantUserPool',
+      integrationPattern: sfn.IntegrationPattern.RUN_JOB,
     });
 
     // This step creates a ACM cert for the tenant subdomain. e.g. tenant-1.thinkr.dev
