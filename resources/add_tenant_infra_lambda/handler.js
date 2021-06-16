@@ -388,6 +388,7 @@ async function createTenantAuth(event) {
     body: {
       tenantSubDomain,
     },
+    tenantuuid,
     addTenantConfigResult: { baseParams },
   } = event;
 
@@ -402,14 +403,17 @@ async function createTenantAuth(event) {
   );
   console.log(`Done creating userpool client for internal cognito userpool ${tenantSubDomain}`);
   return {
-    tenantIDPType: 'cognito',
-    dynamodbTableName: 'oidc-provider',
-    logLevel: 'ERROR',
-    cognitoConfig: {
-      userPoolClientId: tenantUserPoolClient.UserPoolClient.ClientId,
-      userPoolId: tenantUserPool.UserPool.Id,
-      userPoolRegion: tenantUserPool.UserPool.region,
+    body: {
+      tenantIDPType: 'cognito',
+      dynamodbTableName: 'oidc-provider',
+      logLevel: 'ERROR',
+      cognitoConfig: {
+        userPoolClientId: tenantUserPoolClient.UserPoolClient.ClientId,
+        userPoolId: tenantUserPool.UserPool.Id,
+        userPoolRegion: tenantUserPool.UserPool.region,
+      },
     },
+    tenantuuid,
   };
 }
 async function checkIfTenantCertisStable(event) {
