@@ -115,6 +115,12 @@ export default class TenantServiceStack extends Stack {
       actions: ['cognito-idp:*'],
     }));
 
+    // Tenant Infra Lambda Policy to create tenant specific Cognito userpool
+    createTenantInfraFn.addToRolePolicy(new PolicyStatement({
+      resources: ['*'],
+      actions: ['cognito-idp:Create*'],
+    }));
+
     // Tenant Infra Lambda Policy to write/read tenant specific items
     // into oidcprovider/tenants DynamoDB table
     createTenantInfraFn.addToRolePolicy(new PolicyStatement({
