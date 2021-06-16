@@ -208,6 +208,25 @@ async function createCognitoUserPoolClient(baseParams, tenantId, tenantEmailDoma
   return cognitoidentityserviceprovider.createUserPoolClient(params).promise();
 }
 
+async function createTenantCognitoUserPool(tenantId) {
+  const params = {
+    PoolName: tenantId, /* required */
+  };
+  return cognitoidentityserviceprovider.createUserPool(params).promise();
+}
+
+async function createTenantCognitoUserPoolClient(baseParams, tenantId, tenantUserPoolId) {
+  const params = {
+    ClientName: tenantId, /* required */
+    UserPoolId: tenantUserPoolId, /* required */
+    ExplicitAuthFlows: [
+      'ALLOW_ADMIN_USER_PASSWORD_AUTH', 'ALLOW_REFRESH_TOKEN_AUTH',
+      /* more items */
+    ],
+  };
+  return cognitoidentityserviceprovider.createUserPoolClient(params).promise();
+}
+
 async function createAdminUser(emailID, userPoolId, tenantuuid) {
   const params = {
     UserPoolId: userPoolId, /* required */
@@ -364,6 +383,35 @@ async function createTenantCert(event) {
   console.log(`Done creating ACM public certificate for ${tenantSubDomain}: ${JSON.stringify(cert)}`);
   return { cert };
 }
+async function createTenantAuth(event) {
+  const {
+    body: {
+      tenantSubDomain,
+    },
+    addTenantConfigResult: { baseParams },
+  } = event;
+
+  const hostedZoneId = getParameterValue('hostedzoneid', baseParams);
+  console.log(`hostedzoneid is ${hostedZoneId}`);
+  console.log(`Going to create internal cognito userpool for ${tenantSubDomain}`);
+  const tenantUserPool = await createTenantCognitoUserPool(tenantSubDomain);
+  console.log('Done creating internal cognito userpool');
+  console.log(`Going to create userpool client for internal cognito userpool ${tenantSubDomain}`);
+  const tenantUserPoolClient = await createTenantCognitoUserPoolClient(
+    baseParams, tenantSubDomain, tenantUserPool.UserPool.Id,
+  );
+  console.log(`Done creating userpool client for internal cognito userpool ${tenantSubDomain}`);
+  return {
+    tenantIDPType: 'cognito',
+    dynamodbTableName: 'oidc-provider',
+    logLevel: 'ERROR',
+    cognitoConfig: {
+      userPoolClientId: tenantUserPoolClient.UserPoolClient.ClientId,
+      userPoolId: tenantUserPool.UserPool.Id,
+      userPoolRegion: tenantUserPool.UserPool.region,
+    },
+  };
+}
 async function checkIfTenantCertisStable(event) {
   const {
     addTenantConfigResult: { baseParams },
@@ -464,6 +512,9 @@ exports.handler = async function (event) {
     switch (event.step) {
       case 'CONFIG':
         result = await createTenantConfig(event.body);
+        break;
+      case 'TENANTAUTH':
+        result = await createTenantAuth(event.body);
         break;
       case 'CERT':
         result = await createTenantCert(event.body);

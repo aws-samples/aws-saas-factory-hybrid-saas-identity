@@ -91,6 +91,12 @@ export default class TenantServiceStack extends Stack {
       actions: ['ssm:GetParameter*', 'ssm:PutParameter*'],
     }));
 
+    // Tenant Infra Lambda Policy to start federation step function execution
+    createTenantInfraFn.addToRolePolicy(new PolicyStatement({
+      resources: [`arn:aws:states:${this.region}:${this.account}:stateMachine:*TenantFederationStateMachine*`],
+      actions: ['states:StartExecution'],
+    }));
+
     // Tenant Infra Lambda Policy to insert/read tenant specific secrets
     createTenantInfraFn.addToRolePolicy(new PolicyStatement({
       resources: [`arn:aws:secretsmanager:${this.region}:${this.account}:secret:/mysaasapp/*`],
@@ -331,6 +337,22 @@ export default class TenantServiceStack extends Stack {
       }),
     });
 
+    // This creates the tenant specific Cognito userpool, userpoolclient
+    const addTenantUserPool = new tasks.LambdaInvoke(this, 'Add Tenant UserPool', {
+      lambdaFunction: createTenantInfraFn,
+      payloadResponseOnly: true,
+      resultPath: '$.addTenantUserPool',
+      payload: sfn.TaskInput.fromObject({
+        step: 'TENANTAUTH',
+        body: sfn.JsonPath.entirePayload,
+      }),
+    });
+
+    const addFederationToInternalCognitoUserPool = new tasks.StepFunctionsStartExecution(this, 'Internal Cognito federation workflow', {
+      stateMachine: tenantFederationStateMachine,
+      inputPath: '$.body.addTenantUserPool',
+    });
+
     // This step creates a ACM cert for the tenant subdomain. e.g. tenant-1.thinkr.dev
     const addTenantCert = new tasks.LambdaInvoke(this, 'Add Tenant Cert', {
       lambdaFunction: createTenantInfraFn,
@@ -403,6 +425,8 @@ export default class TenantServiceStack extends Stack {
     // TODO: refactor/flatten this to avoid this pseudo chainback hell
     // more appealing visual in the docs here at [project root/images/tenant_infra_workflow.png]
     const addTenantInfraSfnDefinition = addTenantConfig
+      .next(addTenantUserPool)
+      .next(addFederationToInternalCognitoUserPool)
       .next(addTenantCert)
       .next(waitX)
       .next(isTenantCertBaked)
