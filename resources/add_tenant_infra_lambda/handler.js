@@ -504,7 +504,7 @@ exports.handler = async function (event) {
   if (!event.body || event.body === '') {
     return { statusCode: 400, body: 'Onboard Tenant is a POST operation, expects a JSON body' };
   }
-  if (!event.step || event.step === '' || !(['CONFIG', 'CERT', 'CNAME', 'INGRESS', 'CERTBAKED', 'CERTVALID'].includes(event.step))) {
+  if (!event.step || event.step === '' || !(['CONFIG', 'CERT', 'CNAME', 'INGRESS', 'CERTBAKED', 'CERTVALID', 'TENANTAUTH'].includes(event.step))) {
     return { statusCode: 400, body: 'Specify a valid step, CONFIG' };
   }
   let result;
