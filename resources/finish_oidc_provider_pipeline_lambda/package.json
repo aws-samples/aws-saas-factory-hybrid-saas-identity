@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "jose": "^2.0.2",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "uuid": "^8.3.2"
   }
 }
