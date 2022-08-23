@@ -34,5 +34,9 @@
     "lodash": "^4.17.21",
     "oidc-provider": "github:xparticle/node-oidc-provider",
     "oidc-provider-dynamodb-adapter": "github:xparticle/node-oidc-provider-dynamodb-adapter"
+  },
+  "resolutions": {
+    "ejs": "3.1.7",
+    "async": "2.6.4"
   }
 }
