@@ -22,7 +22,7 @@
     "aws-sdk": "^2.1200.0",
     "aws-serverless-express": "^3.4.0",
     "ejs": "^3.1.8",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "koa": "^2.13.4",
     "koa-body": "^5.0.0",
     "koa-ejs": "^4.3.0",
