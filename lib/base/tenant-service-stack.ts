@@ -48,7 +48,10 @@ export default class TenantServiceStack extends Stack {
       description: 'This tenant microservice handles tenant lifecycle right from onboarding, modifications to offboarding',
       deployOptions: {
         loggingLevel: MethodLoggingLevel.INFO,
-        dataTraceEnabled: true,
+        // Data tracing logs full request/response bodies and headers, including the
+        // caller's Authorization header, into CloudWatch. Keep it off so a deployment
+        // of this sample does not accumulate live bearer tokens in its log groups.
+        dataTraceEnabled: false,
       },
     });
 
@@ -62,16 +65,37 @@ export default class TenantServiceStack extends Stack {
       memorySize: 3008,
       environment: {
         COGNITO_USER_POOL_ID: props.federationCognitoUserpool.userPoolId,
+        // The authorizer resolves which tenant owns the addressed subdomain so it can
+        // compare that against the tenant in the caller's token.
+        TENANTS_TABLE_NAME: props.tenantsTableName,
       },
     });
 
+    // The authorizer only reads tenant records: by id to confirm the tenant in the token
+    // exists, and by subdomain to bind a per-tenant domain to its owner. Read-only, and
+    // scoped to this one table and that one index.
+    authFn.addToRolePolicy(new PolicyStatement({
+      resources: [
+        `arn:aws:dynamodb:*:*:table/${props.tenantsTableName}`,
+        `arn:aws:dynamodb:*:*:table/${props.tenantsTableName}/index/subdomain-index`,
+      ],
+      actions: ['dynamodb:GetItem', 'dynamodb:Query'],
+    }));
+
     /**
-     * Request authorizer keys on host name, e.g. tenant-2.thinkr.dev will cache policy
-     * for all subsequent invocations from the same host name.
+     * Request authorizer keys on the host name and the presented token together.
+     *
+     * Host alone is not a safe cache key here. API Gateway caches an authorizer's policy
+     * against its identity source values and reuses it without invoking the Lambda, so
+     * keying on Host alone makes one tenant's Allow replayable by any other caller
+     * addressing the same host for the lifetime of the cache entry -- including a caller
+     * presenting no token at all. Including the Authorization header binds each cached
+     * decision to the token it was actually made for, and makes API Gateway reject a
+     * request that omits the header before the Lambda is reached.
      */
     const auth = new RequestAuthorizer(this, 'oidc-authorizer', {
       handler: authFn,
-      identitySources: ['method.request.header.Host'],
+      identitySources: ['method.request.header.Host', 'method.request.header.Authorization'],
     });
 
     /**
