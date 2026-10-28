@@ -36,7 +36,8 @@ const verifyPromised = promisify(jsonwebtoken.verify.bind(jsonwebtoken));
 const cognitoIntrospect = async (request) => {
   let result;
   try {
-    console.debug(`user claim verfiy invoked for ${JSON.stringify(request)}`);
+    // The request *is* the bearer token, so it is not logged.
+    console.debug('user claim verify invoked');
     const token = request;
     const tokenSections = (token || '').split('.');
     if (tokenSections.length < 2) {
