@@ -204,6 +204,38 @@ async function createCognitoUserPoolClient(baseParams, tenantId, tenantEmailDoma
       IdToken: 'hours',
       RefreshToken: 'days',
     },
+    // WriteAttributes governs what the END USER may change about themselves, using their own
+    // access token via the ordinary UpdateUserAttributes API.
+    //
+    // This MUST be set explicitly, and custom:tenantid must stay out of it. Omitting
+    // WriteAttributes entirely is the PERMISSIVE option, not the restrictive one: a client
+    // created without it can write every mutable attribute, custom ones included. The
+    // CreateUserPoolClient API reference currently documents that default the other way
+    // round, which is how this is easy to get wrong.
+    //
+    // custom:tenantid is the tenant isolation boundary for this solution. The tenant
+    // federation Lambda authorizer reads it (see
+    // resources/add_tenant_federation_lambda_authorizer/introspection/cognito_introspect.js)
+    // and passes it downstream as $context.authorizer.tenantUuid, and the OIDC client
+    // compares it against the resolved tenant. If a user could write it, they could name
+    // another tenant and the authorizer's "this tenant must exist" check would pass, because
+    // the tenant they named does exist -- it just is not theirs.
+    //
+    // The list below is the set of Cognito STANDARD attributes, which is what the API
+    // reference claims the default already is. Choosing it deliberately therefore cannot
+    // break any flow that worked under the believed default, while excluding every custom
+    // attribute.
+    //
+    // Note this does NOT affect federated sign-in. The identity provider's AttributeMapping
+    // (see add_federation_configuration_lambda/handler.js) writes custom:tenantid as a
+    // Cognito-side mapping rather than an end-user update, and WriteAttributes does not
+    // constrain it. Declaring the attribute non-mutable in the pool schema WOULD break that
+    // mapping, which is why the schema is left alone and this is fixed here instead.
+    WriteAttributes: [
+      'address', 'birthdate', 'email', 'family_name', 'gender', 'given_name', 'locale',
+      'middle_name', 'name', 'nickname', 'phone_number', 'picture', 'preferred_username',
+      'profile', 'updated_at', 'website', 'zoneinfo',
+    ],
   };
   return cognitoidentityserviceprovider.createUserPoolClient(params).promise();
 }
@@ -215,6 +247,16 @@ async function createTenantCognitoUserPool(tenantId) {
   return cognitoidentityserviceprovider.createUserPool(params).promise();
 }
 
+// Deliberately does NOT set WriteAttributes, unlike createCognitoUserPoolClient above.
+//
+// This client is created on a per-tenant pool from createTenantCognitoUserPool(), which is
+// created with PoolName only and therefore has no custom attribute schema at all. There is no
+// custom:tenantid on this pool for a user to write, so the permissive default cannot expose a
+// tenant claim here. Flagged explicitly because grepping for createUserPoolClient finds both
+// call sites, and the asymmetry between them is intentional rather than an omission.
+//
+// If a custom attribute is ever added to the per-tenant pools, this client needs the same
+// explicit WriteAttributes treatment as the shared federation client above.
 async function createTenantCognitoUserPoolClient(baseParams, tenantId, tenantUserPoolId) {
   const params = {
     ClientName: tenantId, /* required */
